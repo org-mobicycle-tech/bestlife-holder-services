@@ -15,15 +15,21 @@
 //
 //   bestlife-caller/1 \n <caller name> \n <host> \n <METHOD> \n <path?query> \n <unix seconds> \n <nonce> \n <SHA-256 hex of the body>
 //
-// A signature older or newer than five minutes is refused. No token is accepted. (This file is the same in every
-// holder worker; each folder stands alone.)
+// A signature older or newer than five minutes is refused, and so is a nonce this worker has already let in
+// (nonces.ts: a SQLite-backed Durable Object, strongly consistent), so a captured request cannot be sent twice. No
+// token is accepted. (This file is the same in every holder worker; each folder stands alone.)
 
 export interface CallerEnv {
 	/** The name Best Life signs as. Empty: Best Life may not call this worker at all. */
 	BESTLIFE_CALLER_CN?: string;
 	/** Best Life's caller public key (SPKI PEM). Empty: the one below. Set only if Best Life tells you it changed. */
 	BESTLIFE_CALLER_KEY?: string;
+	/** The nonces already let in (nonces.ts). Without it Best Life is refused: a request could be replayed. */
+	NONCES?: NonceNamespace;
 }
+
+/** The Durable Object namespace of nonces.ts, as much of it as this file uses. */
+export interface NonceNamespace { idFromName(name: string): unknown; get(id: unknown): { fetch(input: string, init?: { method?: string }): Promise<Response> } }
 
 /** Best Life's caller key, the public half. SHA-256 of its SPKI: 16fb7797d603e1b1f5087e769bd6b122b8be2ad841d25fc5b823c6147b3c9da4 */
 export const BESTLIFE_CALLER_KEY =
@@ -64,10 +70,16 @@ export async function caller(req: Request, env: CallerEnv, allow: { binding: boo
 		const pem = (env.BESTLIFE_CALLER_KEY ?? "").trim() || BESTLIFE_CALLER_KEY;
 		const key = await crypto.subtle.importKey("spki", bytes(pem.replace(/-----[^-]+-----|\s/g, "")) as BufferSource, { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"]);
 		const good = await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key, bytes(sig) as BufferSource, new TextEncoder().encode(text) as BufferSource);
-		return good ? { ok: true, who: "bestlife" } : { ok: false, why: "the signature does not match Best Life's key" };
+		if (!good) return { ok: false, why: "the signature does not match Best Life's key" };
 	} catch {
 		return { ok: false, why: "the signature could not be read" };
 	}
+	// ONCE ONLY: checked after the signature, so only Best Life's own requests are ever kept.
+	if (!env.NONCES) return { ok: false, why: "NONCES is not bound: a signed request could be sent twice, so Best Life is refused" };
+	const seen = await env.NONCES.get(env.NONCES.idFromName("nonces")).fetch(`https://nonces/seen?nonce=${nonce}`, { method: "POST" });
+	if (seen.status === 409) return { ok: false, why: "this signed request was already used" };
+	if (!seen.ok) return { ok: false, why: "the nonce could not be checked" };
+	return { ok: true, who: "bestlife" };
 }
 
 export const json = (v: unknown, status = 200): Response =>

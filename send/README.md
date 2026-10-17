@@ -13,7 +13,7 @@ an unknown outcome: it is answered with 409 "check before resending", and is nev
 returns the same answer. Resend is called with `Idempotency-Key: messageId`. KV is not a lock, so Best Life never
 sends the same `messageId` twice at once.
 
-**Who may ask:** Best Life, every request signed with its caller key (`BESTLIFE_CALLER_CN`), or a binding.
+**Who may ask:** Best Life, every request signed with its caller key (`BESTLIFE_CALLER_CN`), or a binding. A signed request works once: `NONCES` (a Durable Object in your account) refuses a nonce already used.
 
 Docs: [Email Sending Workers API](https://developers.cloudflare.com/email-service/api/send-emails/workers-api/).
 

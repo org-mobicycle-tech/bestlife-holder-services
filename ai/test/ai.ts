@@ -3,7 +3,7 @@
 //
 //   bun test/ai.ts
 import worker, { ask, claudeParams, type ClaudeClient, type Env } from "../src/index";
-import { OTHER_KEY, TEST_CN, TEST_KEY, signed } from "./signer";
+import { OTHER_KEY, TEST_CN, TEST_KEY, signed, testNonces } from "./signer";
 
 let failed = 0;
 const is = (what: string, ok: boolean, saw = ""): void => {
@@ -12,7 +12,7 @@ const is = (what: string, ok: boolean, saw = ""): void => {
 };
 
 const ACCESS = { fetch: async () => Response.json({ name: "AI_API_KEY", value: "sk-holder-key" }) };
-const env: Env = { ACCESS, BESTLIFE_CALLER_CN: TEST_CN, BESTLIFE_CALLER_KEY: TEST_KEY };
+const env: Env = { ACCESS, BESTLIFE_CALLER_CN: TEST_CN, BESTLIFE_CALLER_KEY: TEST_KEY, NONCES: testNonces() };
 
 // CLAUDE
 let sent: Record<string, unknown> = {};
@@ -56,6 +56,12 @@ console.log = (...a: unknown[]) => { lines.push(a.join(" ")); };
 const r = await worker.fetch(await req({ prompt: "private question" }), env2);
 console.log = was;
 is("Best Life's signed request gets the answer", r.status === 200 && ((await r.json()) as { text: string }).text === "compatible answer");
+{
+	const once = await req({ prompt: "q" });
+	const again = once.clone() as Request & { cf?: unknown };
+	Object.defineProperty(again, "cf", { value: {} });
+	is("the same signed question asked twice is answered once", (await worker.fetch(once, env2)).status === 200 && (await worker.fetch(again, env2)).status === 403);
+}
 is("the logs never carry the prompt or the answer", lines.length > 0 && lines.every((l) => !l.includes("private") && !l.includes("compatible answer")), lines.join("\n"));
 
 if (failed) { console.log(`\n${failed} failed`); process.exit(1); }

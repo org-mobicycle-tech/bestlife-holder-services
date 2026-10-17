@@ -28,5 +28,21 @@
 			"binding": "ACCESS",
 			"service": "bestlife-holder-access"
 		}
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "NONCES",
+				"class_name": "SeenNonces"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"SeenNonces"
+			]
+		}
 	]
 }

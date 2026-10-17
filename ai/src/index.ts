@@ -14,7 +14,7 @@
 // WHO MAY ASK: Best Life, its request signed with its caller key (caller.ts), or a sibling over a binding. The prompt and the answer are never logged.
 
 import Anthropic from "@anthropic-ai/sdk";
-import { caller, json } from "./caller";
+import { caller, json, type NonceNamespace } from "./caller";
 import { log, warn } from "./log";
 import { type Fetcher } from "./runtime";
 
@@ -27,6 +27,7 @@ export interface Env {
 	MAX_TOKENS?: string;
 	BESTLIFE_CALLER_CN?: string;
 	BESTLIFE_CALLER_KEY?: string;
+	NONCES?: NonceNamespace;
 }
 
 export interface Question { system?: string; prompt: string }
@@ -115,3 +116,6 @@ export default {
 		return json({ error: "not a route", routes: ["POST /ask", "GET /healthz"] }, 404);
 	},
 };
+
+// The nonces already let in (nonces.ts), bound as NONCES.
+export { SeenNonces } from "./nonces";

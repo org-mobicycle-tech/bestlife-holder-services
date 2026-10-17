@@ -15,6 +15,6 @@ account to the provider you chose and nowhere else.
 
 Prompts and answers are never logged.
 
-**Who may ask:** Best Life, every request signed with its caller key (`BESTLIFE_CALLER_CN`), or a binding.
+**Who may ask:** Best Life, every request signed with its caller key (`BESTLIFE_CALLER_CN`), or a binding. A signed request works once: `NONCES` (a Durable Object in your account) refuses a nonce already used.
 
 Checks: `bun install && bun run check && bunx wrangler deploy --dry-run`.

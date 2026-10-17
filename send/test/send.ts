@@ -3,7 +3,7 @@
 //
 //   bun test/send.ts
 import worker, { type Env } from "../src/index";
-import { OTHER_KEY, TEST_CN, TEST_KEY, signed } from "./signer";
+import { OTHER_KEY, TEST_CN, TEST_KEY, signed, testNonces } from "./signer";
 
 let failed = 0;
 const is = (what: string, ok: boolean, saw = ""): void => {
@@ -31,7 +31,7 @@ globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
 const ACCESS = { fetch: async () => Response.json({ name: "RESEND_API_KEY", value: "re_secret_key" }) };
 const kv = new Map<string, string>();
 const SENT = { get: async (k: string) => kv.get(k) ?? null, put: async (k: string, v: string) => { kv.set(k, v); }, delete: async (k: string) => { kv.delete(k); }, list: async () => ({ keys: [], list_complete: true }) };
-const env: Env = { EMAIL, ACCESS, SENT, BESTLIFE_CALLER_CN: TEST_CN, BESTLIFE_CALLER_KEY: TEST_KEY };
+const env: Env = { EMAIL, ACCESS, SENT, BESTLIFE_CALLER_CN: TEST_CN, BESTLIFE_CALLER_KEY: TEST_KEY, NONCES: testNonces() };
 
 const ask = async (b: unknown, o: Parameters<typeof signed>[2] = {}) => worker.fetch(await signed("https://send.example.com/send", { method: "POST", body: JSON.stringify(b) }, o), env);
 const unsigned = (b: unknown) => { const req = new Request("https://send.example.com/send", { method: "POST", body: JSON.stringify(b) }) as Request & { cf?: unknown }; Object.defineProperty(req, "cf", { value: {} }); return worker.fetch(req, env); };
@@ -46,6 +46,17 @@ console.warn = (...a: unknown[]) => { lines.push(a.join(" ")); };
 const r0 = await ask(msg("msg-00000001"), { key: OTHER_KEY });
 is("a signature by another key is refused", r0.status === 403);
 is("the internet unsigned is refused", (await unsigned(msg("msg-00000001"))).status === 403);
+{
+	const once = await signed("https://send.example.com/send", { method: "POST", body: JSON.stringify(msg("msg-00000009")) });
+	const again = once.clone() as Request & { cf?: unknown };
+	Object.defineProperty(again, "cf", { value: {} });
+	const first = await worker.fetch(once, env);
+	const sentAfterFirst = cfSent.length;
+	const second = await worker.fetch(again, env);
+	is("a captured send replayed is refused: one email, not two", first.status === 200 && second.status === 403 && cfSent.length === sentAfterFirst, `${first.status} ${second.status}`);
+	cfSent.length = 0;
+	kv.clear();
+}
 
 // CLOUDFLARE FIRST
 const r1 = (await (await ask(msg("msg-00000001"))).json()) as { via?: string };

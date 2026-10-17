@@ -15,7 +15,7 @@
 // key (caller.ts). Nothing here deletes: moving an item to trash and emptying it
 // is Best Life's trash method, asked of the holder, never done by this worker on its own.
 
-import { caller, json } from "./caller";
+import { caller, json, type NonceNamespace } from "./caller";
 import { log, warn } from "./log";
 import { type Kv } from "./runtime";
 import { type D1Database, type R2Bucket } from "./platform";
@@ -27,6 +27,7 @@ export interface Env {
 	CACHE: Kv;
 	BESTLIFE_CALLER_CN?: string;
 	BESTLIFE_CALLER_KEY?: string;
+	NONCES?: NonceNamespace;
 }
 
 const W = "store";
@@ -109,3 +110,6 @@ export default {
 		return json({ error: "not a route", routes: ["PUT /item?path=", "GET /item?path=", "GET /list?prefix=", "PUT /index?path=", "GET /index?path=", "GET /envelopes?prefix=", "GET /healthz"] }, 404);
 	},
 };
+
+// The nonces already let in (nonces.ts), bound as NONCES.
+export { SeenNonces } from "./nonces";

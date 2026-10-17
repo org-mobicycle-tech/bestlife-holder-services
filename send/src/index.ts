@@ -16,7 +16,7 @@
 //
 // WHO MAY ASK: Best Life, its request signed with its caller key (caller.ts), or a sibling over a binding. Logs say which path sent and why, never the subject, the body or a key.
 
-import { caller, json } from "./caller";
+import { caller, json, type NonceNamespace } from "./caller";
 import { log, warn } from "./log";
 import { type Fetcher, type Kv } from "./runtime";
 
@@ -31,6 +31,7 @@ export interface Env {
 	SENT: Kv;
 	BESTLIFE_CALLER_CN?: string;
 	BESTLIFE_CALLER_KEY?: string;
+	NONCES?: NonceNamespace;
 	RESEND_KEY_NAME?: string;
 }
 
@@ -169,3 +170,6 @@ export default {
 		return json({ error: "not a route", routes: ["POST /send", "GET /healthz"] }, 404);
 	},
 };
+
+// The nonces already let in (nonces.ts), bound as NONCES.
+export { SeenNonces } from "./nonces";

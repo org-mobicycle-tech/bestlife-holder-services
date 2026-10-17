@@ -25,6 +25,9 @@
       "EMAIL": {
         "description": "Cloudflare Email Sending (needs Workers Paid and your domain onboarded in Email Service)."
       },
+      "NONCES": {
+        "description": "The signed requests already let in, so none is let in twice (a Durable Object in your account, free)."
+      },
       "ACCESS": {
         "description": "Your access worker, which opens your Resend key (deploy bestlife-holder-access first)."
       },

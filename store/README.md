@@ -15,6 +15,6 @@ Your evidence in your own R2 bucket (`bestlife-evidence`), its index in your own
 | `GET /healthz` | whether storage, db and cache are bound |
 
 **Who may ask:** your ingest workers over a binding; Best Life, every request signed with its caller key
-(`BESTLIFE_CALLER_CN`).
+(`BESTLIFE_CALLER_CN`). A signed request works once: `NONCES` (a Durable Object in your account) refuses a nonce already used.
 
 Checks: `bun install && bun run check && bunx wrangler deploy --dry-run`.

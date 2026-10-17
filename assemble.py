@@ -6,11 +6,11 @@ import json, os, shutil
 HERE = os.path.dirname(os.path.abspath(__file__))
 SHARED = {
     "access": ["caller", "log", "runtime"],
-    "store": ["caller", "log", "runtime", "tree"],
+    "store": ["caller", "log", "runtime", "tree", "nonces"],
     "ingest-push": ["caller", "log", "runtime", "tree", "file"],
     "ingest-pull": ["caller", "log", "runtime", "tree", "file"],
-    "send": ["caller", "log", "runtime"],
-    "ai": ["caller", "log", "runtime"],
+    "send": ["caller", "log", "runtime", "nonces"],
+    "ai": ["caller", "log", "runtime", "nonces"],
 }
 CN = {"BESTLIFE_CALLER_CN": "bestlife-caller"}
 ARRIVED = {}
@@ -32,7 +32,7 @@ W = {
              "kv_namespaces": [{"binding": "CACHE"}]},
         vars=dict(CN),
         secrets={},
-        desc={"STORAGE": "Your evidence, as it came (an R2 bucket in your account).",
+        desc={"STORAGE": "Your evidence, as it came (an R2 bucket in your account).", "NONCES": "The signed requests already let in, so none is let in twice (a Durable Object in your account, free).",
               "DB": "The index of your evidence (a D1 database in your account).",
               "CACHE": "Envelopes read recently, kept for an hour (a KV namespace in your account)."},
     ),
@@ -57,7 +57,7 @@ W = {
         cfg={"send_email": [{"name": "EMAIL"}], "services": ACCESS, "kv_namespaces": [{"binding": "SENT"}]},
         vars={"RESEND_KEY_NAME": "RESEND_API_KEY", **CN},
         secrets={},
-        desc={"EMAIL": "Cloudflare Email Sending (needs Workers Paid and your domain onboarded in Email Service).",
+        desc={"EMAIL": "Cloudflare Email Sending (needs Workers Paid and your domain onboarded in Email Service).", "NONCES": "The signed requests already let in, so none is let in twice (a Durable Object in your account, free).",
               "ACCESS": "Your access worker, which opens your Resend key (deploy bestlife-holder-access first).",
               "SENT": "What was sent, so nothing is sent twice (a KV namespace in your account)."},
     ),
@@ -66,7 +66,7 @@ W = {
         cfg={"services": ACCESS},
         vars={"AI_PROVIDER": "anthropic", "AI_MODEL": "claude-opus-5-5", "AI_ENDPOINT": "", "AI_KEY_NAME": "AI_API_KEY", "MAX_TOKENS": "16000", **CN},
         secrets={},
-        desc={"ACCESS": "Your access worker, which opens your AI key (deploy bestlife-holder-access first)."},
+        desc={"ACCESS": "Your access worker, which opens your AI key (deploy bestlife-holder-access first).", "NONCES": "The signed requests already let in, so none is let in twice (a Durable Object in your account, free)."},
     ),
 }
 VAR_DESC = {
@@ -111,6 +111,10 @@ for name, w in W.items():
     if w["vars"]:
         cfg["vars"] = w["vars"]
     cfg.update(w["cfg"])
+    if "nonces" in SHARED[name]:
+        # ONCE ONLY (src/nonces.ts): the nonces already let in, a SQLite-backed Durable Object (Workers Free plan too).
+        cfg["durable_objects"] = {"bindings": [{"name": "NONCES", "class_name": "SeenNonces"}]}
+        cfg["migrations"] = [{"tag": "v1", "new_sqlite_classes": ["SeenNonces"]}]
     head = (f"// wrangler.jsonc -- bestlife-holder-{name}: {w['job']}\n"
             "// Deployed into YOUR Cloudflare account by its Deploy to Cloudflare button. No account id is written here: it\n"
             "// is your account. Nothing is exposed: no workers.dev and no preview URL (see README.md for how it is reached).\n")

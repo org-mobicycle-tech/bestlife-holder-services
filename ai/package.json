@@ -39,6 +39,9 @@
       },
       "ACCESS": {
         "description": "Your access worker, which opens your AI key (deploy bestlife-holder-access first)."
+      },
+      "NONCES": {
+        "description": "The signed requests already let in, so none is let in twice (a Durable Object in your account, free)."
       }
     }
   }

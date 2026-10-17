@@ -3,7 +3,7 @@
 //
 //   bun test/store.ts
 import worker, { type Env } from "../src/index";
-import { OTHER_KEY, TEST_CN, TEST_KEY, signed } from "./signer";
+import { OTHER_KEY, TEST_CN, TEST_KEY, signed, testNonces } from "./signer";
 
 let failed = 0;
 const is = (what: string, ok: boolean, saw = ""): void => {
@@ -39,7 +39,7 @@ const CACHE = {
 	delete: async (k: string) => { cache.delete(k); },
 	list: async () => ({ keys: [], list_complete: true }),
 };
-const env: Env = { STORAGE, DB, CACHE, BESTLIFE_CALLER_CN: TEST_CN, BESTLIFE_CALLER_KEY: TEST_KEY };
+const env: Env = { STORAGE, DB, CACHE, BESTLIFE_CALLER_CN: TEST_CN, BESTLIFE_CALLER_KEY: TEST_KEY, NONCES: testNonces() };
 
 const ask = (path: string, init: RequestInit = {}, cf?: unknown) => {
 	const req = new Request(`https://store.example.com${path}`, init) as Request & { cf?: unknown };
@@ -57,6 +57,13 @@ is("a signature ten minutes old is refused", (await asBestLife("/healthz", {}, {
 is("a body changed after signing is refused", (await asBestLife(`/item?path=${encodeURIComponent("inbox/email/a@b.c/00000000000000000000000000000000.eml")}`, { method: "PUT", body: "original" }, { tamper: true })).status === 403);
 is("a token is never accepted", (await asBestLife("/healthz", { headers: { authorization: "Bearer x" } })).status === 403);
 is("Best Life's signed request is let in", (await asBestLife("/healthz")).status === 200);
+const once = await signed("https://store.example.com/healthz");
+const again = once.clone() as Request & { cf?: unknown };
+Object.defineProperty(again, "cf", { value: {} });
+is("the same signed request is let in once", (await worker.fetch(once, env)).status === 200);
+const replay = await worker.fetch(again, env);
+is("   and refused the second time", replay.status === 403 && ((await replay.json()) as { error: string }).error === "this signed request was already used");
+is("without NONCES bound, Best Life is refused", (await worker.fetch(await signed("https://store.example.com/healthz"), { ...env, NONCES: undefined })).status === 403);
 is("with no caller name set, Best Life is refused", (await worker.fetch(await signed("https://store.example.com/healthz"), { ...env, BESTLIFE_CALLER_CN: "" })).status === 403);
 is("a sibling over a binding is let in", (await ask("/healthz")).status === 200);
 

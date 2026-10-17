@@ -119,6 +119,15 @@ signature matches that key, that it covers this host, method, path and the exact
 last five minutes, and that it is signed as `BESTLIFE_CALLER_CN` (`bestlife-caller`). Anything else is refused. A
 token is never accepted. Empty `BESTLIFE_CALLER_CN`, and Best Life cannot call the worker at all.
 
+**Each signed request works once.** Every signature carries a fresh nonce, and each worker keeps the nonces it has
+let in (`NONCES`, a small SQLite-backed Durable Object in your account, kept ten minutes) and refuses one it has seen
+before. So a request copied in transit cannot be sent again: the same email is never sent twice. A Durable Object, not
+KV, because it is strongly consistent: the check and the keeping are one step, so two copies arriving together cannot
+both get in. It is on the Workers Free plan too ("Workers Free plan: Only Durable Objects with SQLite storage backend
+are available", [Durable Objects pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/); free
+limits 5 million rows read and 100,000 rows written a day, two rows per call here). The Deploy button creates it; there
+is nothing to set up.
+
 Why not a client certificate: Best Life's workers and yours both run on Cloudflare, and a Worker's mTLS binding does
 not present its certificate to a host Cloudflare proxies
 ([Cloudflare docs](https://developers.cloudflare.com/workers/runtime-apis/bindings/mtls/)), so your worker would

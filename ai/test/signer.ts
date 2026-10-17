@@ -1,6 +1,8 @@
 // signer.ts -- TESTS ONLY: signs a request the way Best Life does, with a key made for the test run. The real private
 // key never leaves Best Life's key holder; this one never leaves the test. (The same in every holder worker's tests.)
-import { signedText } from "../src/caller";
+import { Database } from "bun:sqlite";
+import { signedText, type NonceNamespace } from "../src/caller";
+import { SeenNonces } from "../src/nonces";
 
 const pair = (await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"])) as CryptoKeyPair;
 const b64 = (buf: ArrayBuffer): string => btoa(String.fromCharCode(...new Uint8Array(buf)));
@@ -32,3 +34,11 @@ export async function signed(url: string, init: RequestInit = {}, o: { cn?: stri
 
 /** Another key, not Best Life's: a signature by it must be refused. */
 export const OTHER_KEY = ((await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"])) as CryptoKeyPair).privateKey;
+
+/** The nonce Durable Object, the real class, on an in-memory SQLite database: one object, as in the worker. */
+export function testNonces(): NonceNamespace {
+	const db = new Database(":memory:");
+	const sql = { exec: (q: string, ...b: unknown[]) => { const rows = db.query(q).all(...(b as never[])); return { toArray: () => rows }; } };
+	const one = new SeenNonces({ storage: { sql } });
+	return { idFromName: (n: string) => n, get: () => ({ fetch: (input: string, init?: { method?: string }) => one.fetch(new Request(input, init)) }) };
+}

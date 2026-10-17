@@ -32,3 +32,4 @@ export async function signed(url: string, init: RequestInit = {}, o: { cn?: stri
 
 /** Another key, not Best Life's: a signature by it must be refused. */
 export const OTHER_KEY = ((await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"])) as CryptoKeyPair).privateKey;
+
