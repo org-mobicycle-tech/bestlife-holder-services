@@ -1,0 +1,2 @@
+# Your own encryption key: 32 random bytes, base64. Make one with: openssl rand -base64 32. Keep a copy somewhere safe; without it sealed keys cannot be opened.
+ENCRYPTION_KEY=

@@ -1,0 +1,27 @@
+{
+  "name": "bestlife-holder-access",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Seals and opens your keys with your own encryption key, and hands them only to your other Best Life workers.",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "check": "tsc --noEmit && bun test/access.ts"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "wrangler": "^4.129.0"
+  },
+  "cloudflare": {
+    "label": "Best Life holder \u00b7 access",
+    "bindings": {
+      "ENCRYPTION_KEY": {
+        "description": "Your own encryption key: 32 random bytes, base64. Make one with: openssl rand -base64 32. Keep a copy somewhere safe; without it sealed keys cannot be opened."
+      },
+      "KEYS": {
+        "description": "Where your sealed keys are kept (a KV namespace in your account)."
+      }
+    }
+  }
+}

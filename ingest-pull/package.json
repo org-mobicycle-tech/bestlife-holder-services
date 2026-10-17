@@ -1,0 +1,42 @@
+{
+  "name": "bestlife-holder-ingest-pull",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Reads your mailboxes over IMAP every 15 minutes, without changing them, and files each new message in your store.",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "check": "tsc --noEmit && bun test/pull.ts"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "wrangler": "^4.129.0"
+  },
+  "cloudflare": {
+    "label": "Best Life holder \u00b7 ingest-pull",
+    "bindings": {
+      "MAILBOXES": {
+        "description": "Your mailboxes, as JSON: [{\"address\":\"you@example.com\",\"host\":\"imap.example.com\",\"port\":993,\"user\":\"you@example.com\",\"key\":\"IMAP_PASSWORD\"}]. Each key names a KEY_<key> secret on your access worker."
+      },
+      "PER_RUN": {
+        "description": "At most this many new messages per mailbox per run."
+      },
+      "BESTLIFE_HOLDER": {
+        "description": "Your Best Life holder id, as Settings \u203a Stores shows it. May be left empty."
+      },
+      "BESTLIFE_ARRIVED_URL": {
+        "description": "Where to tell Best Life a message arrived, once Settings \u203a Stores gives you one (with a BESTLIFE_TOKEN secret you add then). Empty: nothing is told; mail is still filed in your store."
+      },
+      "STORE": {
+        "description": "Your store worker (deploy bestlife-holder-store first)."
+      },
+      "ACCESS": {
+        "description": "Your access worker, which opens each mailbox's password (deploy bestlife-holder-access first)."
+      },
+      "STATE": {
+        "description": "The last message read in each mailbox (a KV namespace in your account)."
+      }
+    }
+  }
+}

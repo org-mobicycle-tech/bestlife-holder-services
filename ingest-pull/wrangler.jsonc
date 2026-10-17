@@ -1,0 +1,44 @@
+// wrangler.jsonc -- bestlife-holder-ingest-pull: Reads your mailboxes over IMAP every 15 minutes, without changing them, and files each new message in your store.
+// Deployed into YOUR Cloudflare account by its Deploy to Cloudflare button. No account id is written here: it
+// is your account. Nothing is exposed: no workers.dev and no preview URL (see README.md for how it is reached).
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "bestlife-holder-ingest-pull",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-10-01",
+	"workers_dev": false,
+	"preview_urls": false,
+	"observability": {
+		"enabled": true,
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true
+		}
+	},
+	"vars": {
+		"MAILBOXES": "[]",
+		"PER_RUN": "25",
+		"BESTLIFE_HOLDER": "",
+		"BESTLIFE_ARRIVED_URL": ""
+	},
+	"services": [
+		{
+			"binding": "STORE",
+			"service": "bestlife-holder-store"
+		},
+		{
+			"binding": "ACCESS",
+			"service": "bestlife-holder-access"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "STATE"
+		}
+	],
+	"triggers": {
+		"crons": [
+			"*/15 * * * *"
+		]
+	}
+}

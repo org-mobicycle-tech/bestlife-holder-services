@@ -1,0 +1,32 @@
+// wrangler.jsonc -- bestlife-holder-ai: Asks your own AI on your own key, so your evidence goes only to the AI provider you chose.
+// Deployed into YOUR Cloudflare account by its Deploy to Cloudflare button. No account id is written here: it
+// is your account. Nothing is exposed: no workers.dev and no preview URL (see README.md for how it is reached).
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "bestlife-holder-ai",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-10-01",
+	"workers_dev": false,
+	"preview_urls": false,
+	"observability": {
+		"enabled": true,
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true
+		}
+	},
+	"vars": {
+		"AI_PROVIDER": "anthropic",
+		"AI_MODEL": "claude-opus-5-5",
+		"AI_ENDPOINT": "",
+		"AI_KEY_NAME": "AI_API_KEY",
+		"MAX_TOKENS": "16000",
+		"BESTLIFE_CALLER_CN": ""
+	},
+	"services": [
+		{
+			"binding": "ACCESS",
+			"service": "bestlife-holder-access"
+		}
+	]
+}

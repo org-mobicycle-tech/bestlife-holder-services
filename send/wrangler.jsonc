@@ -1,0 +1,38 @@
+// wrangler.jsonc -- bestlife-holder-send: Sends your mail with Cloudflare Email Sending, and with Resend on your own key only when Cloudflare did not send it. Never twice.
+// Deployed into YOUR Cloudflare account by its Deploy to Cloudflare button. No account id is written here: it
+// is your account. Nothing is exposed: no workers.dev and no preview URL (see README.md for how it is reached).
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "bestlife-holder-send",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-10-01",
+	"workers_dev": false,
+	"preview_urls": false,
+	"observability": {
+		"enabled": true,
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true
+		}
+	},
+	"vars": {
+		"RESEND_KEY_NAME": "RESEND_API_KEY",
+		"BESTLIFE_CALLER_CN": ""
+	},
+	"send_email": [
+		{
+			"name": "EMAIL"
+		}
+	],
+	"services": [
+		{
+			"binding": "ACCESS",
+			"service": "bestlife-holder-access"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "SENT"
+		}
+	]
+}

@@ -1,0 +1,33 @@
+{
+  "name": "bestlife-holder-store",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Keeps your evidence in your own storage (R2), its index in your own database (D1), and recent reads in your own cache (KV).",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "check": "tsc --noEmit && bun test/store.ts"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "wrangler": "^4.129.0"
+  },
+  "cloudflare": {
+    "label": "Best Life holder \u00b7 store",
+    "bindings": {
+      "BESTLIFE_CALLER_CN": {
+        "description": "The name on Best Life's client certificate, as Settings \u203a Stores shows it once Best Life has one. Empty: Best Life cannot call this worker."
+      },
+      "STORAGE": {
+        "description": "Your evidence, as it came (an R2 bucket in your account)."
+      },
+      "DB": {
+        "description": "The index of your evidence (a D1 database in your account)."
+      },
+      "CACHE": {
+        "description": "Envelopes read recently, kept for an hour (a KV namespace in your account)."
+      }
+    }
+  }
+}
