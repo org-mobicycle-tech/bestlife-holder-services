@@ -69,6 +69,31 @@ How this path differs from the button:
   monorepo.
 - GitLab shows build results as commit statuses where GitHub uses check runs.
 
+### Bitbucket
+
+Cloudflare's Deploy button takes only github.com and gitlab.com repositories
+([Deploy to Cloudflare buttons](https://developers.cloudflare.com/workers/platform/deploy-buttons/), Limitations).
+Workers Builds connects only Artifacts, GitHub, GitLab and Cursor Origin. For any other provider, "e.g. Bitbucket",
+the docs say to use an external CI/CD provider and deploy with Wrangler
+([Git integration](https://developers.cloudflare.com/workers/ci-cd/builds/git-integration/),
+[CI/CD](https://developers.cloudflare.com/workers/ci-cd/)). So a Bitbucket holder deploys from **Bitbucket Pipelines**:
+
+1. Create a Bitbucket repository and import `https://github.com/org-mobicycle-tech/bestlife-holder-services.git`.
+2. In Cloudflare, create an API token with **Edit Cloudflare Workers**, scoped to your account only
+   ([external CI/CD authentication](https://developers.cloudflare.com/workers/ci-cd/external-cicd/github-actions/)).
+3. In **Repository settings › Repository variables**, add `CLOUDFLARE_API_TOKEN` (secured) and `CLOUDFLARE_ACCOUNT_ID`.
+   Keep a copy of the token on your `access` worker as `KEY_CLOUDFLARE_API_TOKEN` if you want it held in your
+   account. It is never kept in Settings and never held by Best Life.
+4. Each worker's folder has a `bitbucket-pipelines.yml` that runs the checks and `bunx wrangler deploy` on a push to
+   `main`. Use one repository per worker, with that file at its root.
+5. Add the worker's secrets under **Settings › Variables and Secrets**.
+
+### No source control at all
+
+You do not need a repository. Source control is an advanced setting, off by default: Best Life deploys your workers
+into your Cloudflare account for you. **That path is not built yet.** Until it is, a holder without a repository can
+deploy any folder from their own machine with `bunx wrangler login` and then `bunx wrangler deploy` inside it.
+
 Either way, the connection is between **your** GitLab or GitHub account and **your** Cloudflare account. You authorize
 it in Cloudflare's dashboard. Best Life never holds a GitHub or GitLab token for you. If one of your workers ever
 needs a token, keep it on your `access` worker as a `KEY_<NAME>` secret.

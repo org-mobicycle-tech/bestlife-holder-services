@@ -1,0 +1,15 @@
+# bitbucket-pipelines.yml -- deploy bestlife-holder-access from Bitbucket, which Cloudflare's Deploy button and Workers
+# Builds do not connect to. Uses YOUR Cloudflare API token (Edit Cloudflare Workers, your account only), kept as the
+# secured repository variable CLOUDFLARE_API_TOKEN with CLOUDFLARE_ACCOUNT_ID beside it -- never in this file.
+# With one repository per worker this file sits at its root; in one repository for all six, keep the folder and
+# set the step's working directory to it (cd access).
+image: oven/bun:1
+pipelines:
+  branches:
+    main:
+      - step:
+          name: Check and deploy bestlife-holder-access
+          script:
+            - bun install
+            - bun run check
+            - bunx wrangler deploy
