@@ -41,6 +41,38 @@ See the [Deploy to Cloudflare buttons](https://developers.cloudflare.com/workers
 [changelog post for the button](https://developers.cloudflare.com/changelog/post/2025-04-08-deploy-to-cloudflare-button/)
 and [automatic resource provisioning](https://developers.cloudflare.com/changelog/post/2025-10-24-automatic-resource-provisioning/).
 
+## GitHub or GitLab
+
+Both work. Cloudflare's docs say the Deploy button takes a public **github.com or gitlab.com** repository. It
+"clones your source repository into the user's GitHub/GitLab account", and self-hosted GitHub or GitLab is not
+supported ([Deploy to Cloudflare buttons](https://developers.cloudflare.com/workers/platform/deploy-buttons/),
+Limitations). Workers Builds connects a Worker to a GitHub or GitLab repository and deploys on every push
+([Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/),
+[GitLab integration](https://developers.cloudflare.com/workers/ci-cd/builds/git-integration/gitlab-integration/)).
+
+**With the button:** press it, and choose your GitLab account when Cloudflare asks where to create the repository.
+
+**If the button does not offer GitLab for you,** the docs do not say whether it copies a GitHub source into a GitLab
+account. In that case, do it by hand:
+
+1. On GitLab, choose **New project › Import project › Repository by URL**, with
+   `https://github.com/org-mobicycle-tech/bestlife-holder-services.git`.
+2. In Cloudflare, go to **Workers & Pages › Create application › GitLab** and select that project.
+3. Set the **root directory** to the worker's folder (for example `store`). Keep the Worker name
+   `bestlife-holder-<folder>`; it must match the `name` in that folder's `wrangler.jsonc`.
+4. Deploy. Wrangler creates the KV, D1 and R2 the worker needs in your account.
+
+How this path differs from the button:
+
+- Nothing prompts you for secrets. Add them under **Settings › Variables and Secrets** (for `access`: `ENCRYPTION_KEY`).
+- One GitLab project can serve all six workers. Connect it once per worker, each with its own root directory, as a
+  monorepo.
+- GitLab shows build results as commit statuses where GitHub uses check runs.
+
+Either way, the connection is between **your** GitLab or GitHub account and **your** Cloudflare account. You authorize
+it in Cloudflare's dashboard. Best Life never holds a GitHub or GitLab token for you. If one of your workers ever
+needs a token, keep it on your `access` worker as a `KEY_<NAME>` secret.
+
 ## Nothing is exposed
 
 Every worker sets `workers_dev: false` and `preview_urls: false`, so none has a `*.workers.dev` address.
