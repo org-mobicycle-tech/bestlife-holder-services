@@ -17,7 +17,7 @@
 	},
 	"vars": {
 		"RESEND_KEY_NAME": "RESEND_API_KEY",
-		"BESTLIFE_CALLER_CN": ""
+		"BESTLIFE_CALLER_CN": "bestlife-caller"
 	},
 	"send_email": [
 		{

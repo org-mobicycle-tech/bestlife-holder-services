@@ -106,12 +106,25 @@ Every worker sets `workers_dev: false` and `preview_urls: false`, so none has a 
   from the internet is refused.
 - **`ingest-push`** is reached only by Email Routing: **Email › Email Routing › Routing rules › Send to a Worker**.
 - **`ingest-pull`** runs only on its schedule (every 15 minutes).
-- **`store`, `send` and `ai`** are the only ones Best Life calls. To let it, give each one a Custom Domain on a zone
-  you own (**Workers › your worker › Settings › Domains & Routes**). Then turn on mTLS for that hostname
-  (**SSL/TLS › Client Certificates**, then a WAF rule that requires a verified client certificate on it). Set
-  `BESTLIFE_CALLER_CN` to the certificate name shown in Settings › Stores. Each worker checks, on every call, that
-  Cloudflare verified a client certificate with that exact name. A token is never accepted. Until you set
-  `BESTLIFE_CALLER_CN`, Best Life cannot call the worker at all.
+- **`store`, `send` and `ai`** are the only ones Best Life calls. To let it, give each one an address: a Custom Domain
+  on a zone you own (**Workers › your worker › Settings › Domains & Routes**), or, if you have no domain, its
+  `workers.dev` address. Nothing else to set up, on any plan, at no cost.
+
+### How each worker knows a call is Best Life's
+
+Every request Best Life sends is **signed** with Best Life's caller key (ECDSA P-256). The private half never leaves
+Best Life's key holder; the public half is in each worker's `src/caller.ts` (SHA-256 of the key:
+`16fb7797d603e1b1f5087e769bd6b122b8be2ad841d25fc5b823c6147b3c9da4`). On every call the worker checks that the
+signature matches that key, that it covers this host, method, path and the exact body, that it was made within the
+last five minutes, and that it is signed as `BESTLIFE_CALLER_CN` (`bestlife-caller`). Anything else is refused. A
+token is never accepted. Empty `BESTLIFE_CALLER_CN`, and Best Life cannot call the worker at all.
+
+Why not a client certificate: Best Life's workers and yours both run on Cloudflare, and a Worker's mTLS binding does
+not present its certificate to a host Cloudflare proxies
+([Cloudflare docs](https://developers.cloudflare.com/workers/runtime-apis/bindings/mtls/)), so your worker would
+never see one. Checking a certificate from another account would also need your own certificate authority, an
+Enterprise feature ([Bring your own CA](https://developers.cloudflare.com/ssl/client-certificates/byo-ca/)). A
+signature needs neither.
 
 ## Your keys
 
@@ -142,9 +155,9 @@ prompt, an answer or a key never reaches the logs. Each worker has a test that c
 ## Registering with Best Life
 
 After deploying, open **Settings › Stores › You bring your own** in Best Life. For each worker Best Life calls
-(`store`, `send`, `ai`), paste its custom domain and the SHA-256 fingerprint of its certificate. Best Life records
-them in your own Settings. "Still to set up" then shows each worker as registered. Once Best Life has its mTLS
-client in place, it also shows whether each one answers `/healthz`.
+(`store`, `send`, `ai`), paste its address (its custom domain or `workers.dev` address). Best Life records it in your
+own Settings. "Still to set up" then shows each worker as registered, and whether it answers Best Life's signed
+`/healthz`.
 
 ## Checks
 

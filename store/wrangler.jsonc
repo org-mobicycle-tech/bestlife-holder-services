@@ -16,7 +16,7 @@
 		}
 	},
 	"vars": {
-		"BESTLIFE_CALLER_CN": ""
+		"BESTLIFE_CALLER_CN": "bestlife-caller"
 	},
 	"r2_buckets": [
 		{

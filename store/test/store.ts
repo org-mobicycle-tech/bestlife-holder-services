@@ -1,8 +1,9 @@
-// THE STORE: a binding or Best Life's verified certificate may ask, no one else; paths stay in the tree; an item
+// THE STORE: a binding or a request Best Life signed may ask, no one else; paths stay in the tree; an item
 // already kept stays as it is; envelopes go to the db and are cached; nothing deletes.
 //
 //   bun test/store.ts
 import worker, { type Env } from "../src/index";
+import { OTHER_KEY, TEST_CN, TEST_KEY, signed } from "./signer";
 
 let failed = 0;
 const is = (what: string, ok: boolean, saw = ""): void => {
@@ -38,22 +39,25 @@ const CACHE = {
 	delete: async (k: string) => { cache.delete(k); },
 	list: async () => ({ keys: [], list_complete: true }),
 };
-const env: Env = { STORAGE, DB, CACHE, BESTLIFE_CALLER_CN: "bestlife-holders" };
+const env: Env = { STORAGE, DB, CACHE, BESTLIFE_CALLER_CN: TEST_CN, BESTLIFE_CALLER_KEY: TEST_KEY };
 
-const cert = (cn: string, verified = "SUCCESS") => ({ tlsClientAuth: { certPresented: "1", certVerified: verified, certSubjectDN: `CN=${cn}` } });
 const ask = (path: string, init: RequestInit = {}, cf?: unknown) => {
 	const req = new Request(`https://store.example.com${path}`, init) as Request & { cf?: unknown };
 	if (cf !== undefined) Object.defineProperty(req, "cf", { value: cf });
 	return worker.fetch(req, env);
 };
+const asBestLife = async (path: string, init: RequestInit = {}, o: Parameters<typeof signed>[2] = {}) => worker.fetch(await signed(`https://store.example.com${path}`, init, o), env);
 const P = "inbox/email/someone@example.com/0123456789abcdef0123456789abcdef.eml";
 
 // WHO MAY ASK
-is("the internet without a certificate is refused", (await ask("/healthz", {}, {})).status === 403);
-is("an unverified certificate is refused", (await ask("/healthz", {}, cert("bestlife-holders", "FAILED:expired"))).status === 403);
-is("someone else's certificate is refused", (await ask("/healthz", {}, cert("someone-else"))).status === 403);
-is("a token is never accepted", (await ask("/healthz", { headers: { authorization: "Bearer x" } }, cert("bestlife-holders"))).status === 403);
-is("Best Life's verified certificate is let in", (await ask("/healthz", {}, cert("bestlife-holders"))).status === 200);
+is("the internet unsigned is refused", (await ask("/healthz", {}, {})).status === 403);
+is("a signature by another key is refused", (await asBestLife("/healthz", {}, { key: OTHER_KEY })).status === 403);
+is("another caller name is refused", (await asBestLife("/healthz", {}, { cn: "someone-else" })).status === 403);
+is("a signature ten minutes old is refused", (await asBestLife("/healthz", {}, { time: Math.floor(Date.now() / 1000) - 600 })).status === 403);
+is("a body changed after signing is refused", (await asBestLife(`/item?path=${encodeURIComponent("inbox/email/a@b.c/00000000000000000000000000000000.eml")}`, { method: "PUT", body: "original" }, { tamper: true })).status === 403);
+is("a token is never accepted", (await asBestLife("/healthz", { headers: { authorization: "Bearer x" } })).status === 403);
+is("Best Life's signed request is let in", (await asBestLife("/healthz")).status === 200);
+is("with no caller name set, Best Life is refused", (await worker.fetch(await signed("https://store.example.com/healthz"), { ...env, BESTLIFE_CALLER_CN: "" })).status === 403);
 is("a sibling over a binding is let in", (await ask("/healthz")).status === 200);
 
 // THE TREE
@@ -66,7 +70,7 @@ const put1 = await ask(`/item?path=${encodeURIComponent(P)}`, { method: "PUT", b
 is("an item is kept", put1.status === 201);
 const put2 = (await (await ask(`/item?path=${encodeURIComponent(P)}`, { method: "PUT", body: "something else" })).json()) as { existed?: boolean };
 is("an item already kept stays as it is", put2.existed === true && new TextDecoder().decode(objects.get(P)!.bytes) === "Subject: hi\r\n\r\nbody");
-const got = await ask(`/item?path=${encodeURIComponent(P)}`, {}, cert("bestlife-holders"));
+const got = await asBestLife(`/item?path=${encodeURIComponent(P)}`);
 is("Best Life reads the item back", got.status === 200 && (await got.text()).includes("body"));
 const list = (await (await ask(`/list?prefix=${encodeURIComponent("inbox/email/")}`)).json()) as { items: { path: string }[] };
 is("the item is listed under its folder", list.items.some((i) => i.path === P), JSON.stringify(list));

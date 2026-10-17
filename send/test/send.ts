@@ -1,8 +1,9 @@
 // SEND: Cloudflare first; Resend only when Cloudflare clearly refused; never twice; unknown is never retried on the
-// other path; only Best Life's certificate or a binding may ask; logs carry no subject, body or key.
+// other path; only a request Best Life signed, or a binding, may ask; logs carry no subject, body or key.
 //
 //   bun test/send.ts
 import worker, { type Env } from "../src/index";
+import { OTHER_KEY, TEST_CN, TEST_KEY, signed } from "./signer";
 
 let failed = 0;
 const is = (what: string, ok: boolean, saw = ""): void => {
@@ -30,14 +31,10 @@ globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
 const ACCESS = { fetch: async () => Response.json({ name: "RESEND_API_KEY", value: "re_secret_key" }) };
 const kv = new Map<string, string>();
 const SENT = { get: async (k: string) => kv.get(k) ?? null, put: async (k: string, v: string) => { kv.set(k, v); }, delete: async (k: string) => { kv.delete(k); }, list: async () => ({ keys: [], list_complete: true }) };
-const env: Env = { EMAIL, ACCESS, SENT, BESTLIFE_CALLER_CN: "bestlife-holders" };
+const env: Env = { EMAIL, ACCESS, SENT, BESTLIFE_CALLER_CN: TEST_CN, BESTLIFE_CALLER_KEY: TEST_KEY };
 
-const cert = (cn: string) => ({ tlsClientAuth: { certPresented: "1", certVerified: "SUCCESS", certSubjectDN: `CN=${cn}` } });
-const ask = (b: unknown, cf: unknown = cert("bestlife-holders")) => {
-	const req = new Request("https://send.example.com/send", { method: "POST", body: JSON.stringify(b) }) as Request & { cf?: unknown };
-	if (cf !== undefined) Object.defineProperty(req, "cf", { value: cf });
-	return worker.fetch(req, env);
-};
+const ask = async (b: unknown, o: Parameters<typeof signed>[2] = {}) => worker.fetch(await signed("https://send.example.com/send", { method: "POST", body: JSON.stringify(b) }, o), env);
+const unsigned = (b: unknown) => { const req = new Request("https://send.example.com/send", { method: "POST", body: JSON.stringify(b) }) as Request & { cf?: unknown }; Object.defineProperty(req, "cf", { value: {} }); return worker.fetch(req, env); };
 const msg = (id: string) => ({ messageId: id, from: "me@example.com", to: "you@elsewhere.org", subject: "private subject", text: "private body" });
 
 const lines: string[] = [];
@@ -46,9 +43,9 @@ console.log = (...a: unknown[]) => { lines.push(a.join(" ")); };
 console.warn = (...a: unknown[]) => { lines.push(a.join(" ")); };
 
 // WHO MAY ASK
-const r0 = await ask(msg("msg-00000001"), cert("someone-else"));
-is("someone else's certificate is refused", r0.status === 403);
-is("the internet without a certificate is refused", (await ask(msg("msg-00000001"), {})).status === 403);
+const r0 = await ask(msg("msg-00000001"), { key: OTHER_KEY });
+is("a signature by another key is refused", r0.status === 403);
+is("the internet unsigned is refused", (await unsigned(msg("msg-00000001"))).status === 403);
 
 // CLOUDFLARE FIRST
 const r1 = (await (await ask(msg("msg-00000001"))).json()) as { via?: string };

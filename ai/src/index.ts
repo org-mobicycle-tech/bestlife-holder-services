@@ -11,8 +11,7 @@
 //              openai-compatible   any /chat/completions endpoint (a model the holder runs, e.g. on Hetzner):
 //                                  AI_ENDPOINT is its base URL, AI_MODEL its model name.
 //
-// WHO MAY ASK: Best Life, over the holder's custom domain with mTLS (its certificate named in BESTLIFE_CALLER_CN),
-// or a sibling over a binding. The prompt and the answer are never logged.
+// WHO MAY ASK: Best Life, its request signed with its caller key (caller.ts), or a sibling over a binding. The prompt and the answer are never logged.
 
 import Anthropic from "@anthropic-ai/sdk";
 import { caller, json } from "./caller";
@@ -27,6 +26,7 @@ export interface Env {
 	AI_KEY_NAME?: string;
 	MAX_TOKENS?: string;
 	BESTLIFE_CALLER_CN?: string;
+	BESTLIFE_CALLER_KEY?: string;
 }
 
 export interface Question { system?: string; prompt: string }
@@ -98,7 +98,7 @@ export async function ask(env: Env, q: Question, makeClient: (key: string) => Cl
 
 export default {
 	async fetch(req: Request, env: Env): Promise<Response> {
-		const who = caller(req, env, { binding: true, bestlife: true });
+		const who = await caller(req, env, { binding: true, bestlife: true });
 		if (!who.ok) { warn(W, "refused", { why: who.why }); return json({ error: who.why }, 403); }
 		const { pathname } = new URL(req.url);
 		if (pathname === "/healthz") return json({ ok: true, worker: "bestlife-holder-ai", provider: (env.AI_PROVIDER ?? "anthropic").trim() || "anthropic", model: (env.AI_MODEL ?? "").trim() || DEFAULT_MODEL });

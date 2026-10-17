@@ -11,8 +11,8 @@
 //   GET /envelopes?prefix=     the newest envelopes under a prefix (200 at most)
 //   GET /healthz               whether storage, db and cache are bound
 //
-// WHO MAY ASK: the holder's own ingest workers, over a binding; and Best Life, over the holder's custom domain with
-// mTLS, its certificate named in BESTLIFE_CALLER_CN. Nothing here deletes: moving an item to trash and emptying it
+// WHO MAY ASK: the holder's own ingest workers, over a binding; and Best Life, its request signed with its caller
+// key (caller.ts). Nothing here deletes: moving an item to trash and emptying it
 // is Best Life's trash method, asked of the holder, never done by this worker on its own.
 
 import { caller, json } from "./caller";
@@ -26,6 +26,7 @@ export interface Env {
 	DB: D1Database;
 	CACHE: Kv;
 	BESTLIFE_CALLER_CN?: string;
+	BESTLIFE_CALLER_KEY?: string;
 }
 
 const W = "store";
@@ -35,7 +36,7 @@ const ready = async (db: D1Database): Promise<void> => { if (!schemaReady) { awa
 
 export default {
 	async fetch(req: Request, env: Env): Promise<Response> {
-		const who = caller(req, env, { binding: true, bestlife: true });
+		const who = await caller(req, env, { binding: true, bestlife: true });
 		if (!who.ok) { warn(W, "refused", { why: who.why }); return json({ error: who.why }, 403); }
 		const url = new URL(req.url);
 		const path = url.searchParams.get("path") ?? "";

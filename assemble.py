@@ -12,7 +12,7 @@ SHARED = {
     "send": ["caller", "log", "runtime"],
     "ai": ["caller", "log", "runtime"],
 }
-CN = {"BESTLIFE_CALLER_CN": ""}
+CN = {"BESTLIFE_CALLER_CN": "bestlife-caller"}
 ARRIVED = {}
 ACCESS = [{"binding": "ACCESS", "service": "bestlife-holder-access"}]
 STORE = [{"binding": "STORE", "service": "bestlife-holder-store"}]
@@ -70,7 +70,7 @@ W = {
     ),
 }
 VAR_DESC = {
-    "BESTLIFE_CALLER_CN": "The name on Best Life's client certificate, as Settings › Stores shows it once Best Life has one. Empty: Best Life cannot call this worker.",
+    "BESTLIFE_CALLER_CN": "The name Best Life signs its requests as: bestlife-caller. Leave it as it is. Empty: Best Life cannot call this worker.",
     "MAILBOXES": 'Your mailboxes, as JSON: [{"address":"you@example.com","host":"imap.example.com","port":993,"user":"you@example.com","key":"IMAP_PASSWORD"}]. Each key names a KEY_<key> secret on your access worker.',
     "PER_RUN": "At most this many new messages per mailbox per run.",
     "RESEND_KEY_NAME": "The name of your Resend key on your access worker (a KEY_RESEND_API_KEY secret there).",

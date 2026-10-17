@@ -58,7 +58,7 @@ async function body(req: Request): Promise<Record<string, unknown> | null> {
 
 export default {
 	async fetch(req: Request, env: Env): Promise<Response> {
-		const who = caller(req, {}, { binding: true, bestlife: false });
+		const who = await caller(req, {}, { binding: true, bestlife: false });
 		if (!who.ok) { warn(W, "refused", { why: who.why }); return json({ error: who.why }, 403); }
 		const { pathname } = new URL(req.url);
 

@@ -15,7 +15,7 @@ export default {
 
 	/** Only a sibling, over a binding, may ask whether this worker is here. */
 	async fetch(req: Request): Promise<Response> {
-		const who = caller(req, {}, { binding: true, bestlife: false });
+		const who = await caller(req, {}, { binding: true, bestlife: false });
 		if (!who.ok) return json({ error: who.why }, 403);
 		if (new URL(req.url).pathname === "/healthz") return json({ ok: true, worker: "bestlife-holder-ingest-pull" });
 		return json({ error: "not a route: this worker runs on its schedule" }, 404);

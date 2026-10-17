@@ -14,8 +14,7 @@
 // not verified, recipient not allowed, limits). Any other error -- a timeout, an internal error -- is unknown, and
 // unknown is never retried on the other path.
 //
-// WHO MAY ASK: Best Life, over the holder's custom domain with mTLS (its certificate named in BESTLIFE_CALLER_CN),
-// or a sibling over a binding. Logs say which path sent and why, never the subject, the body or a key.
+// WHO MAY ASK: Best Life, its request signed with its caller key (caller.ts), or a sibling over a binding. Logs say which path sent and why, never the subject, the body or a key.
 
 import { caller, json } from "./caller";
 import { log, warn } from "./log";
@@ -31,6 +30,7 @@ export interface Env {
 	ACCESS: Fetcher;
 	SENT: Kv;
 	BESTLIFE_CALLER_CN?: string;
+	BESTLIFE_CALLER_KEY?: string;
 	RESEND_KEY_NAME?: string;
 }
 
@@ -155,7 +155,7 @@ export async function send(env: Env, m: Outgoing): Promise<Response> {
 
 export default {
 	async fetch(req: Request, env: Env): Promise<Response> {
-		const who = caller(req, env, { binding: true, bestlife: true });
+		const who = await caller(req, env, { binding: true, bestlife: true });
 		if (!who.ok) { warn(W, "refused", { why: who.why }); return json({ error: who.why }, 403); }
 		const { pathname } = new URL(req.url);
 		if (pathname === "/healthz") return json({ ok: true, worker: "bestlife-holder-send", cloudflare: !!env.EMAIL, access: !!env.ACCESS });

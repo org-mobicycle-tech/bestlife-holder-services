@@ -20,7 +20,7 @@
         "description": "The name of your Resend key on your access worker (a KEY_RESEND_API_KEY secret there)."
       },
       "BESTLIFE_CALLER_CN": {
-        "description": "The name on Best Life's client certificate, as Settings \u203a Stores shows it once Best Life has one. Empty: Best Life cannot call this worker."
+        "description": "The name Best Life signs its requests as: bestlife-caller. Leave it as it is. Empty: Best Life cannot call this worker."
       },
       "EMAIL": {
         "description": "Cloudflare Email Sending (needs Workers Paid and your domain onboarded in Email Service)."

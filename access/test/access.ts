@@ -3,6 +3,7 @@
 //
 //   bun test/access.ts
 import worker, { type Env } from "../src/index";
+import { signed } from "./signer";
 
 let failed = 0;
 const is = (what: string, ok: boolean, saw = ""): void => {
@@ -32,8 +33,7 @@ const ask = (path: string, init: RequestInit = {}, cf?: unknown, e: Env = env) =
 const post = (path: string, b: unknown, e: Env = env) => ask(path, { method: "POST", body: JSON.stringify(b) }, undefined, e);
 
 // WHO MAY ASK
-const cert = { tlsClientAuth: { certPresented: "1", certVerified: "SUCCESS", certSubjectDN: "CN=bestlife" } };
-is("a request from the internet is refused, even with a verified certificate", (await ask("/open", { method: "POST", body: '{"name":"IMAP_PASSWORD"}' }, cert)).status === 403);
+is("a request from the internet is refused, even one Best Life signed", (await worker.fetch(await signed("https://access/open", { method: "POST", body: '{"name":"IMAP_PASSWORD"}' }), env)).status === 403);
 is("a request from the internet is refused without one", (await ask("/names", {}, {})).status === 403);
 
 // HEALTH

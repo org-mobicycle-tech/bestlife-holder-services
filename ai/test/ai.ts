@@ -3,6 +3,7 @@
 //
 //   bun test/ai.ts
 import worker, { ask, claudeParams, type ClaudeClient, type Env } from "../src/index";
+import { OTHER_KEY, TEST_CN, TEST_KEY, signed } from "./signer";
 
 let failed = 0;
 const is = (what: string, ok: boolean, saw = ""): void => {
@@ -11,7 +12,7 @@ const is = (what: string, ok: boolean, saw = ""): void => {
 };
 
 const ACCESS = { fetch: async () => Response.json({ name: "AI_API_KEY", value: "sk-holder-key" }) };
-const env: Env = { ACCESS, BESTLIFE_CALLER_CN: "bestlife-holders" };
+const env: Env = { ACCESS, BESTLIFE_CALLER_CN: TEST_CN, BESTLIFE_CALLER_KEY: TEST_KEY };
 
 // CLAUDE
 let sent: Record<string, unknown> = {};
@@ -47,15 +48,14 @@ is("an endpoint that is not https is refused", !(await ask({ ...env2, AI_ENDPOIN
 is("an unknown provider is refused", !(await ask({ ...env, AI_PROVIDER: "other" }, { prompt: "q" })).ok);
 
 // THE ROUTE
-const cert = (cn: string) => ({ tlsClientAuth: { certPresented: "1", certVerified: "SUCCESS", certSubjectDN: `CN=${cn}` } });
-const req = (b: unknown, cf: unknown) => { const r = new Request("https://ai.example.com/ask", { method: "POST", body: JSON.stringify(b) }) as Request & { cf?: unknown }; Object.defineProperty(r, "cf", { value: cf }); return r; };
-is("someone else's certificate is refused", (await worker.fetch(req({ prompt: "q" }, cert("x")), env2)).status === 403);
+const req = (b: unknown, o: Parameters<typeof signed>[2] = {}) => signed("https://ai.example.com/ask", { method: "POST", body: JSON.stringify(b) }, o);
+is("a signature by another key is refused", (await worker.fetch(await req({ prompt: "q" }, { key: OTHER_KEY }), env2)).status === 403);
 const lines: string[] = [];
 const was = console.log;
 console.log = (...a: unknown[]) => { lines.push(a.join(" ")); };
-const r = await worker.fetch(req({ prompt: "private question" }, cert("bestlife-holders")), env2);
+const r = await worker.fetch(await req({ prompt: "private question" }), env2);
 console.log = was;
-is("Best Life's certificate gets the answer", r.status === 200 && ((await r.json()) as { text: string }).text === "compatible answer");
+is("Best Life's signed request gets the answer", r.status === 200 && ((await r.json()) as { text: string }).text === "compatible answer");
 is("the logs never carry the prompt or the answer", lines.length > 0 && lines.every((l) => !l.includes("private") && !l.includes("compatible answer")), lines.join("\n"));
 
 if (failed) { console.log(`\n${failed} failed`); process.exit(1); }

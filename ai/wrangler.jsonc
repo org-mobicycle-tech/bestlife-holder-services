@@ -21,7 +21,7 @@
 		"AI_ENDPOINT": "",
 		"AI_KEY_NAME": "AI_API_KEY",
 		"MAX_TOKENS": "16000",
-		"BESTLIFE_CALLER_CN": ""
+		"BESTLIFE_CALLER_CN": "bestlife-caller"
 	},
 	"services": [
 		{
