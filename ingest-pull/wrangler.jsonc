@@ -17,9 +17,7 @@
 	},
 	"vars": {
 		"MAILBOXES": "[]",
-		"PER_RUN": "25",
-		"BESTLIFE_HOLDER": "",
-		"BESTLIFE_ARRIVED_URL": ""
+		"PER_RUN": "25"
 	},
 	"services": [
 		{

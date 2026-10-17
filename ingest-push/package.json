@@ -16,12 +16,6 @@
   "cloudflare": {
     "label": "Best Life holder \u00b7 ingest-push",
     "bindings": {
-      "BESTLIFE_HOLDER": {
-        "description": "Your Best Life holder id, as Settings \u203a Stores shows it. May be left empty."
-      },
-      "BESTLIFE_ARRIVED_URL": {
-        "description": "Where to tell Best Life a message arrived, once Settings \u203a Stores gives you one (with a BESTLIFE_TOKEN secret you add then). Empty: nothing is told; mail is still filed in your store."
-      },
       "STORE": {
         "description": "Your store worker (deploy bestlife-holder-store first)."
       }

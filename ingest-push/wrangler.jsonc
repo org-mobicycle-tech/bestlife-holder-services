@@ -15,10 +15,6 @@
 			"invocation_logs": true
 		}
 	},
-	"vars": {
-		"BESTLIFE_HOLDER": "",
-		"BESTLIFE_ARRIVED_URL": ""
-	},
 	"services": [
 		{
 			"binding": "STORE",

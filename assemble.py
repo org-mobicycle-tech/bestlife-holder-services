@@ -13,7 +13,7 @@ SHARED = {
     "ai": ["caller", "log", "runtime"],
 }
 CN = {"BESTLIFE_CALLER_CN": ""}
-ARRIVED = {"BESTLIFE_HOLDER": "", "BESTLIFE_ARRIVED_URL": ""}
+ARRIVED = {}
 ACCESS = [{"binding": "ACCESS", "service": "bestlife-holder-access"}]
 STORE = [{"binding": "STORE", "service": "bestlife-holder-store"}]
 
@@ -39,14 +39,14 @@ W = {
     "ingest-push": dict(
         job="Receives the mail Email Routing sends it, files each message in your store, and tells Best Life it arrived (metadata only).",
         cfg={"services": STORE},
-        vars=dict(ARRIVED),
+        vars={},
         secrets={},
         desc={"STORE": "Your store worker (deploy bestlife-holder-store first)."},
     ),
     "ingest-pull": dict(
         job="Reads your mailboxes over IMAP every 15 minutes, without changing them, and files each new message in your store.",
         cfg={"services": STORE + ACCESS, "kv_namespaces": [{"binding": "STATE"}], "triggers": {"crons": ["*/15 * * * *"]}},
-        vars={"MAILBOXES": "[]", "PER_RUN": "25", **ARRIVED},
+        vars={"MAILBOXES": "[]", "PER_RUN": "25"},
         secrets={},
         desc={"STORE": "Your store worker (deploy bestlife-holder-store first).",
               "ACCESS": "Your access worker, which opens each mailbox's password (deploy bestlife-holder-access first).",
@@ -71,8 +71,6 @@ W = {
 }
 VAR_DESC = {
     "BESTLIFE_CALLER_CN": "The name on Best Life's client certificate, as Settings › Stores shows it once Best Life has one. Empty: Best Life cannot call this worker.",
-    "BESTLIFE_HOLDER": "Your Best Life holder id, as Settings › Stores shows it. May be left empty.",
-    "BESTLIFE_ARRIVED_URL": "Where to tell Best Life a message arrived, once Settings › Stores gives you one (with a BESTLIFE_TOKEN secret you add then). Empty: nothing is told; mail is still filed in your store.",
     "MAILBOXES": 'Your mailboxes, as JSON: [{"address":"you@example.com","host":"imap.example.com","port":993,"user":"you@example.com","key":"IMAP_PASSWORD"}]. Each key names a KEY_<key> secret on your access worker.',
     "PER_RUN": "At most this many new messages per mailbox per run.",
     "RESEND_KEY_NAME": "The name of your Resend key on your access worker (a KEY_RESEND_API_KEY secret there).",

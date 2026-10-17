@@ -16,4 +16,6 @@ Then set `MAILBOXES`:
 `PER_RUN` (default 25) caps how many new messages are read per mailbox per run. Where each mailbox got to is kept in
 `STATE`.
 
+**Telling Best Life:** as `ingest-push`, signed with your `CONNECTION_KEY` secret.
+
 Checks: `bun install && bun run check && bunx wrangler deploy --dry-run`.

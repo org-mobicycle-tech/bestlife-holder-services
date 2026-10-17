@@ -70,9 +70,11 @@ Every worker sets `workers_dev: false` and `preview_urls: false`, so none has a 
 
 ## Telling Best Life mail arrived
 
-`ingest-push` and `ingest-pull` tell Best Life a message arrived with metadata only: holder, evidence, address, id,
-size and time. They send it to `BESTLIFE_ARRIVED_URL`, using a `BESTLIFE_TOKEN` secret you add to the worker. Leave
-both empty until Settings › Stores gives you them. Your mail is still filed in your store either way.
+`ingest-push` and `ingest-pull` tell Best Life a message arrived with metadata only: evidence, address, id, size and
+time, never the message. Each notice is signed with your **connection key**, the `CONNECTION_KEY` secret Best Life's
+Settings makes you (`blck1.…`, shown once). Best Life's door checks the signature against the public half it keeps,
+that the notice is fresh, and that you hold the address. No token is ever sent. Add the secret to the worker after
+deploying. Without it nothing is told, and your mail is still filed in your store.
 
 ## Logs
 

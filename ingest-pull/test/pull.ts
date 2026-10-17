@@ -61,7 +61,6 @@ globalThis.fetch = (async () => Response.json({ ok: true })) as typeof fetch;
 const env: Env = {
 	STORE, ACCESS, STATE,
 	MAILBOXES: JSON.stringify([{ address: "Someone@Example.com", host: "imap.example.com", port: 993, user: "someone@example.com", key: "IMAP_PASSWORD" }]),
-	BESTLIFE_HOLDER: "h", BESTLIFE_ARRIVED_URL: "https://bestlife.example/arrived", BESTLIFE_TOKEN: "t",
 };
 
 const lines: string[] = [];
